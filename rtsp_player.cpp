@@ -92,6 +92,7 @@ void RTSP_Player::run()
             condition.wait(&mutex);
             mutex.unlock();
         }
+        QThread::msleep(0.02);
     }
     pauseFlag = false;
     stopFlag = true;

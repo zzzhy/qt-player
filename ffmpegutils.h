@@ -38,6 +38,7 @@ private:
     QMap<int, const AVCodec*> m_audioIndex;
     QString          m_rtspUrl;
     const AVCodec   *m_AVCodec;
+    const AVCodecParameters *m_AVCodecParameters;
     AVFormatContext *m_AVFormatContext;
     AVCodecContext  *m_AVCodecContext;
     AVFrame         *m_AVFrame;

@@ -40,15 +40,15 @@ int FFmpegUtils::MyFFmpegInit()
     if (m_rtspUrl.startsWith("rtsp")) {
         // 设置传输协议为TCP协议
         av_dict_set(&options, "rtsp_transport", "tcp", 0);
+        av_dict_set (&options, "framerate", "10", 0);
+//        // 设置TCP连接最大延时时间
+//        av_dict_set(&options, "max_delay", "1000", 0);
 
-        // 设置TCP连接最大延时时间
-        av_dict_set(&options, "max_delay", "1000", 0);
+//        // 设置“buffer_size”缓存容量
+//        av_dict_set(&options, "buffer_size", "1024000", 0);
 
-        // 设置“buffer_size”缓存容量
-        av_dict_set(&options, "buffer_size", "1024000", 0);
-
-        // 设置avformat_open_input超时时间为10秒
-        av_dict_set(&options, "stimeout", "10000000", 0);
+//        // 设置avformat_open_input超时时间为10秒
+//        av_dict_set(&options, "stimeout", "10000000", 0);
     }
 
     // 打开网络流或文件流
@@ -82,6 +82,7 @@ int FFmpegUtils::MyFFmpegInit()
                 qDebug("found video stream: index: %d", i);
                 m_videoIndex = i;
                 m_AVCodec = pLocalCodec;
+                m_AVCodecParameters = pLocalCodecParameters;
                 qDebug("Video Codec: resolution %d x %d", pLocalCodecParameters->width, pLocalCodecParameters->height);
             }
         } else if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
@@ -107,10 +108,11 @@ int FFmpegUtils::MyFFmpegInit()
         return -1;
     }
     m_AVCodecContext = avcodec_alloc_context3(m_AVCodec);
+    m_AVCodecContext->thread_count = 8;
     // 配置编码器上下文的参数
-    //    m_AVCodecContext->bit_rate = 0;         //码率
-    //    m_AVCodecContext->time_base.den = 25;   // 下面2行设置帧率，每秒/25帧
-    //    m_AVCodecContext->time_base.num = 1;
+        m_AVCodecContext->bit_rate = 0;         //码率
+        m_AVCodecContext->time_base.den = 10;   // 下面2行设置帧率，每秒/25帧
+        m_AVCodecContext->time_base.num = 1;
     //    m_AVCodecContext->frame_number = 1;     //每包一个视频帧
 
     if (avcodec_parameters_to_context(m_AVCodecContext, m_AVFormatContext->streams[m_videoIndex]->codecpar) < 0)
@@ -150,23 +152,26 @@ int FFmpegUtils::MyFFmpepReadFrame()
 
     if (m_AVPacket->stream_index != m_videoIndex)
     {
-        qDebug("this is not a video frame!\n");
+//        qDebug("this is not a video frame!\n");
+        av_packet_unref(m_AVPacket);
         return 0;
     }
 
 
     //  解码m_AVPacket，Decode the video frame of size avpkt->size from avpkt->data into picture
     ret = avcodec_send_packet(m_AVCodecContext, m_AVPacket);
+    av_packet_unref(m_AVPacket);
     if (ret < 0)
     {
         qDebug("avcodec_decode_video2 fail!\n");
         return -1;
     }
+    m_AVPacket->pts = av_rescale_q(m_AVPacket->pts,m_AVCodecContext->time_base,m_AVFrame->time_base);
     while (ret >= 0)
     {
         ret = avcodec_receive_frame(m_AVCodecContext, m_AVFrame);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-            qDebug("avcodec_receive_frame: Resource temporarily unavailable | End of file ! ret: %d", ret);
+//            qDebug("avcodec_receive_frame: Resource temporarily unavailable | End of file ! ret: %d", ret);
             return 0;
         } else if (ret < 0) {
             qDebug("avcodec_receive_frame: legitimate decoding errors");
@@ -216,8 +221,6 @@ int FFmpegUtils::MyFFmpepReadFrame()
         emit MyFFmpegSigGetOneFrame(image);
     }
 
-    // 释放资源
-    av_packet_unref(m_AVPacket);
     return 0;
 }
 
