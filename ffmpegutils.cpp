@@ -1,4 +1,6 @@
 #include "ffmpegutils.h"
+#include <QThread>
+
 
 FFmpegUtils::FFmpegUtils(QObject *parent) : QObject(parent)
 {
@@ -37,19 +39,15 @@ int FFmpegUtils::MyFFmpegInit()
     char *pRtspUrl = byteRtspUrl.data();
     // 设置参数
     AVDictionary *options = NULL;
-    if (m_rtspUrl.startsWith("rtsp")) {
-        // 设置传输协议为TCP协议
-        av_dict_set(&options, "rtsp_transport", "tcp", 0);
-        av_dict_set (&options, "framerate", "10", 0);
-//        // 设置TCP连接最大延时时间
-//        av_dict_set(&options, "max_delay", "1000", 0);
-
-//        // 设置“buffer_size”缓存容量
-//        av_dict_set(&options, "buffer_size", "1024000", 0);
-
-//        // 设置avformat_open_input超时时间为10秒
-//        av_dict_set(&options, "stimeout", "10000000", 0);
-    }
+    // 设置传输协议为TCP协议
+    av_dict_set(&options, "rtsp_transport", "tcp", 0);
+    av_dict_set (&options, "framerate", "10", 0);
+    // 设置TCP连接最大延时时间
+    av_dict_set(&options, "max_delay", "1000", 0);
+    // 设置“buffer_size”缓存容量
+    av_dict_set(&options, "buffer_size", "1024000", 0);
+    // 设置avformat_open_input超时时间为3秒
+    av_dict_set(&options, "stimeout", "3000000", 0);
 
     // 打开网络流或文件流
     int ret = avformat_open_input(&m_AVFormatContext, pRtspUrl, NULL, &options);
@@ -84,6 +82,7 @@ int FFmpegUtils::MyFFmpegInit()
                 m_AVCodec = pLocalCodec;
                 m_AVCodecParameters = pLocalCodecParameters;
                 qDebug("Video Codec: resolution %d x %d", pLocalCodecParameters->width, pLocalCodecParameters->height);
+                m_framerate = m_AVFormatContext->streams[i]->time_base.den / m_AVFormatContext->streams[i]->time_base.num;
             }
         } else if (pLocalCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO) {
             if (!m_audioIndex.contains(i)) {
@@ -109,11 +108,6 @@ int FFmpegUtils::MyFFmpegInit()
     }
     m_AVCodecContext = avcodec_alloc_context3(m_AVCodec);
     m_AVCodecContext->thread_count = 8;
-    // 配置编码器上下文的参数
-        m_AVCodecContext->bit_rate = 0;         //码率
-        m_AVCodecContext->time_base.den = 10;   // 下面2行设置帧率，每秒/25帧
-        m_AVCodecContext->time_base.num = 1;
-    //    m_AVCodecContext->frame_number = 1;     //每包一个视频帧
 
     if (avcodec_parameters_to_context(m_AVCodecContext, m_AVFormatContext->streams[m_videoIndex]->codecpar) < 0)
     {
@@ -219,6 +213,7 @@ int FFmpegUtils::MyFFmpepReadFrame()
         free(rgbData[0]);
         // 发送QImage
         emit MyFFmpegSigGetOneFrame(image);
+        QThread::msleep(1000*1000/m_framerate);
     }
 
     return 0;

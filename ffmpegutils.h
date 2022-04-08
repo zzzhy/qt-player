@@ -41,6 +41,7 @@ private:
     const AVCodecParameters *m_AVCodecParameters;
     AVFormatContext *m_AVFormatContext;
     AVCodecContext  *m_AVCodecContext;
+    int             m_framerate;
     AVFrame         *m_AVFrame;
     AVFrame         *m_AVFrameRGB;
     AVPacket        *m_AVPacket;

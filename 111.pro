@@ -2,8 +2,8 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-INCLUDEPATH += /usr/local/Cellar/ffmpeg/5.0/include
-LIBS += -L/usr/local/Cellar/ffmpeg/5.0/lib -lavcodec -lavformat -lswscale -lavdevice
+INCLUDEPATH += $$PWD/third/ffmpeg/include
+LIBS += -L$$PWD/third/ffmpeg/lib -lavcodec -lavformat -lswscale -lavdevice
 CONFIG += c++11
 
 # You can make your code fail to compile if it uses deprecated APIs.

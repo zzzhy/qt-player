@@ -11,10 +11,10 @@ MainWindow::MainWindow(QWidget *parent) :
     m_ffmpeg = new FFmpegUtils;
 
     m_player = new RTSP_Player(m_ffmpeg);
-//    m_player->SetPlayerUrl("rtmp://58.200.131.2:1935/livetv/cctv3");
+    m_player->SetPlayerUrl("http://vfx.mtime.cn/Video/2019/02/04/mp4/190204084208765161.mp4");
 //    m_player->SetPlayerUrl("/Users/zzzhy/Downloads/DSC_4960.MOV");
 //    m_player->SetPlayerUrl("/Users/zzzhy/Downloads/bunny_1080p_60fps_265.mp4");
-    m_player->SetPlayerUrl("rtsp://152.136.172.225:554/openUrl/ndMDf5C?beginTime=20220405T150000&endTime=20220405T150100&playBackMode=1");
+//    m_player->SetPlayerUrl("rtsp://152.136.172.225:554/openUrl/ndMDf5C?beginTime=20220405T150000&endTime=20220405T150100&playBackMode=1");
 //    m_player->SetPlayerUrl("/Users/zzzhy/Downloads/out.avi");
     connect(m_ffmpeg, SIGNAL(MyFFmpegSigGetOneFrame(QImage)), this, SLOT(SlotGetOneFrame(QImage)));
 }
